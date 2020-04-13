@@ -1,6 +1,7 @@
 package panels;
 
 import filters.Gauss;
+import filters.GaussZoom;
 import filters.Zoom;
 
 import javax.swing.*;
@@ -250,4 +251,13 @@ public class MyPanel extends JPanel {
         gaussFrame.setVisible(true);
     }
 
+    public void gaussZoom() {
+        BufferedImage imageA = zoneA.getImage();
+        if (imageA != null) {
+            BufferedImage finalImage = GaussZoom.createFinalImage(imageA);
+            zoneB.setImage(finalImage);
+            setImageToSave(finalImage);
+        }
+        repaint();
+    }
 }

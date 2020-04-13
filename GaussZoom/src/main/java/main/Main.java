@@ -15,7 +15,7 @@ public class Main {
             e.printStackTrace();
         }
 
-        MainFrame mainFrame = new MainFrame();
+        new MainFrame();
     }
 
 }

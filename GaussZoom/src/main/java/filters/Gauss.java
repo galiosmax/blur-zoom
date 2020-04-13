@@ -2,13 +2,15 @@ package filters;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Gauss {
 
     public static BufferedImage getGauss(BufferedImage image, int radius, boolean fast) {
 
         if (fast) {
-            return getFast(image, radius);
+            return getLinear(image, radius);
         } else {
             return getUsual(image, radius);
         }
@@ -169,9 +171,9 @@ public class Gauss {
                 double summationRed = 0, summationGreen = 0, summationBlue = 0;
 
                 for (int i = 0; i < radius; ++i) {
-                        summationRed += red[i];
-                        summationGreen += green[i];
-                        summationBlue += blue[i];
+                    summationRed += red[i];
+                    summationGreen += green[i];
+                    summationBlue += blue[i];
                 }
                 gauss.setRGB(x, y, new Color((int) summationRed, (int) summationGreen, (int) summationBlue).getRGB());
             }
@@ -238,6 +240,141 @@ public class Gauss {
         System.out.println("Fast gauss taken " + (System.currentTimeMillis() - time) / 1000d + " sec");
         return gauss;
 
+    }
+
+    private static BufferedImage getLinear(BufferedImage image, int radius) {
+        long time = System.currentTimeMillis();
+
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        int[] source = image.getRGB(0, 0, width, height, null, 0, width);
+
+        int[] redSource = new int[width * height];
+        int[] greenSource = new int[width * height];
+        int[] blueSource = new int[width * height];
+
+        for (int i = 0; i < source.length; ++i) {
+            Color color = new Color(source[i]);
+            redSource[i] = color.getRed();
+            greenSource[i] = color.getGreen();
+            blueSource[i] = color.getBlue();
+        }
+
+        int[] redDest = new int[width * height];
+        int[] greenDest = new int[width * height];
+        int[] blueDest = new int[width * height];
+
+        gaussBlur_4(redSource, redDest, width, height, radius);
+        gaussBlur_4(greenSource, greenDest, width, height, radius);
+        gaussBlur_4(blueSource, blueDest, width, height, radius);
+
+        int[] res = new int[width * height];
+
+        for (int i = 0; i < res.length; ++i) {
+            redDest[i] = Math.min(255, Math.max(0, redDest[i]));
+            greenDest[i] = Math.min(255, Math.max(0, greenDest[i]));
+            blueDest[i] = Math.min(255, Math.max(0, blueDest[i]));
+
+            res[i] = new Color(redDest[i], greenDest[i], blueDest[i]).getRGB();
+        }
+
+        BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        result.setRGB(0, 0, width, height, res, 0, width);
+        System.out.println("Linear gauss taken " + (System.currentTimeMillis() - time) / 1000d + " sec");
+        return result;
+    }
+
+    private static int[] boxesForGauss(float sigma, int n) {
+        double wIdeal = Math.sqrt((12d * sigma * sigma / n) + 1);
+        int wl = (int) Math.floor(wIdeal);
+        if (wl % 2 == 0) {
+            wl--;
+        }
+        int wu = wl + 2;
+
+        double mIdeal = (double) (12 * sigma * sigma - n * wl * wl - 4 * n * wl - 3 * n) / (-4 * wl - 4);
+        int m = (int) Math.round(mIdeal);
+
+        List<Integer> sizes = new ArrayList<>();
+        for (int i = 0; i < n; ++i) {
+            sizes.add(i < m ? wl : wu);
+        }
+        return sizes.stream().mapToInt(i -> i).toArray();
+    }
+
+    private static void boxBlur_4(int[] source, int[] dest, int w, int h, int r) {
+        System.arraycopy(source, 0, dest, 0, source.length);
+        boxBlurH_4(dest, source, w, h, r);
+        boxBlurT_4(source, dest, w, h, r);
+    }
+
+    private static void boxBlurH_4(int[] source, int[] dest, int w, int h, int r) {
+        double iarr = 1d / (r + r + 1);
+        for (int i = 0; i < h; ++i) {
+            int ti = i * w;
+            int li = ti;
+            int ri = ti + r;
+            int fv = source[ti];
+            int lv = source[ti + w - 1];
+            int val = (r + 1) * fv;
+            for (int j = 0; j < r; ++j) {
+                val += source[ti + j];
+            }
+            for (int j = 0; j <= r; ++j) {
+                val += source[ri++] - fv;
+                dest[ti++] = (int) Math.round(val * iarr);
+            }
+            for (int j = r + 1; j < w - r; ++j) {
+                val += source[ri++] - source[li++];
+                dest[ti++] = (int) Math.round(val * iarr);
+            }
+            for (int j = w - r; j < w; j++) {
+                val += lv - source[li++];
+                dest[ti++] = (int) Math.round(val * iarr);
+            }
+        }
+    }
+
+    private static void boxBlurT_4(int[] source, int[] dest, int w, int h, int r) {
+        double iarr = 1d / (r + r + 1);
+        for (int i = 0; i < w; ++i) {
+            int ti = i;
+            int li = ti;
+            int ri = ti + r * w;
+            int fv = source[ti];
+            int lv = source[ti + w * (h - 1)];
+            int val = (r + 1) * fv;
+            for (int j = 0; j < r; ++j) {
+                val += source[ti + j * w];
+            }
+            for (int j = 0; j <= r; ++j) {
+                val += source[ri] - fv;
+                dest[ti] = (int) Math.round(val * iarr);
+                ri += w;
+                ti += w;
+            }
+            for (int j = r + 1; j < h - r; ++j) {
+                val += source[ri] - source[li];
+                dest[ti] = (int) Math.round(val * iarr);
+                li += w;
+                ri += w;
+                ti += w;
+            }
+            for (int j = h - r; j < h; j++) {
+                val += lv - source[li];
+                dest[ti] = (int) Math.round(val * iarr);
+                li += w;
+                ti += w;
+            }
+        }
+    }
+
+    private static void gaussBlur_4(int[] source, int[] dest, int w, int h, int r) {
+        var bxs = boxesForGauss(r, 3);
+        boxBlur_4(source, dest, w, h, (bxs[0] - 1) / 2);
+        boxBlur_4(dest, source, w, h, (bxs[1] - 1) / 2);
+        boxBlur_4(source, dest, w, h, (bxs[2] - 1) / 2);
     }
 
     private static double[][] getWeights(int radius) {

@@ -8,8 +8,7 @@ public class ZoneA extends JPanel {
 
     private BufferedImage image;
 
-    ZoneA() {
-    }
+    ZoneA() {}
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);

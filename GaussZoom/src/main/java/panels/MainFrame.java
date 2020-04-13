@@ -226,6 +226,7 @@ public class MainFrame extends JFrame {
         toolBar.addSeparator();
         createMenuAndToolbarItem("Zoom", "Get zoomed image", "zoom.png", e -> zoomEditMenuItemListener(), editMenu);
         createMenuAndToolbarItem("Gauss", "Get Gaussian blur image", "gauss.png", e -> gaussEditMenuItemListener(), editMenu);
+        createMenuAndToolbarItem("GaussZoom", "Make final pic", "roberts.png", e -> gaussZoomEditMenuItemListener(), editMenu);
         toolBar.addSeparator();
         editMenu.addSeparator();
     }
@@ -244,6 +245,10 @@ public class MainFrame extends JFrame {
 
     private void gaussEditMenuItemListener() {
         panel.blurFilter();
+    }
+
+    private void gaussZoomEditMenuItemListener() {
+        panel.gaussZoom();
     }
 
     private void createViewMenuItems(JMenu viewMenu) {
