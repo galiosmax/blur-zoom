@@ -17,6 +17,7 @@ protected:
 
 	BITMAPINFO m_bmp;
 	BITMAPINFO m_bmpOut;
+	BITMAPINFO m_bmpGauss;
 	RGBQUAD* m_frame;
 	CRect m_rect;
 	RGBQUAD* m_stretchFrame;
@@ -24,11 +25,16 @@ protected:
 	CComPtr<IStretchImage> m_pScaler;
 	bool m_init = false;
 	void CreateGaussianFrame();
-	RGBQUAD* CreateSideImage(int width, boolean left);
-	RGBQUAD* CreateSubImage(int x, int y, int width, int height, RGBQUAD* original);
-	RGBQUAD* ProcessImage(RGBQUAD* image);
-	RGBQUAD* BuildGaussImage(RGBQUAD* originalImage, RGBQUAD* leftSide, RGBQUAD* rightSide);
-	RGBQUAD* Zoom(RGBQUAD* image, int times);
-	RGBQUAD* Gauss(RGBQUAD* image, int radius);
+	RGBQUAD* CreateSideImage(int width, int height, int originalWidth, boolean left);
+	RGBQUAD* CreateSubImage(RGBQUAD* original, int x, int y, int width, int height);
+	RGBQUAD* ProcessImage(RGBQUAD* image, int width, int height);
+	void BuildGaussImage(int width, int height, RGBQUAD* originalImage, int leftWidth, RGBQUAD* leftSide, int rightWidth, RGBQUAD* rightSide);
+	RGBQUAD* Zoom(RGBQUAD* image, int width, int height, int times);
+	RGBQUAD* Gauss(RGBQUAD* image, int width, int height, int radius);
+	int* boxesForGauss(float sigma, int n);
+	void boxBlur_4(int* source, int* dest, int width, int height, int radius);
+	void boxBlurH_4(int* source, int* dest, int width, int height, int radius);
+	void boxBlurT_4(int* source, int* dest, int width, int height, int radius);
+	void gaussBlur_4(int* source, int* dest, int width, int height, int radius);
 };
 

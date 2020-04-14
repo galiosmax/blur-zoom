@@ -188,7 +188,8 @@ void CAspectRatioDlg::OnBnClickedPlayPause()
 	m_isPlaying = !m_isPlaying;
 	m_playButton.SetIcon(m_isPlaying ? m_pauseIcon : m_playIcon);
 
-	SetTimer(1, (int)(1000.0 / m_fps), NULL);
+	//SetTimer(1, (int)(1000.0 / m_fps), NULL);
+	SetTimer(1, 1000.0, NULL);
 }
 
 
